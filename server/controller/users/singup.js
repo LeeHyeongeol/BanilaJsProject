@@ -1,7 +1,14 @@
-const { users } = require("../../models")
+const { User } = require("../../models")
 const { sign } = require("jsonwebtoken")
+const { validationCheck } = require("../../function/validation")
 // const { dotenv } = require("dotenv")
 require("dotenv").config()
+
+//{
+// "username" : "babo",
+//"password" : "moki",
+//"mobile" : "010-9876-5432"
+//}
 
 module.exports = {
   post: async (req, res) => {
@@ -9,15 +16,17 @@ module.exports = {
     const { username, password, mobile } = req.body
     if (!username || !password || !mobile) {
       res.status(404).send({ message: "please write full information down!" })
+    } else if (!validationCheck(username) || !validationCheck(password)) {
+      res.statsu(404).send({ message: "wrong validate information" })
     } else {
       try {
-        const userInfoName = await users.findOne({
+        const userInfoName = await User.findOne({
           where: { username }
         })
-        const userInfoPassword = await users.findOne({
+        const userInfoPassword = await User.findOne({
           where: { password }
         })
-        const userInfoMobile = await users.findOne({
+        const userInfoMobile = await User.findOne({
           where: { mobile }
         })
         if (userInfoName) {
@@ -27,7 +36,7 @@ module.exports = {
         } else if (userInfoMobile) {
           res.status(400).send({ message: "mobile already exists" })
         } else {
-          const [userData, created] = await users.findOrCreate({
+          const [userData, created] = await User.findOrCreate({
             where: {
               username,
               password,
@@ -40,22 +49,23 @@ module.exports = {
             { expiresIn: 60 * 60 * 24 }
           )
           res.status(201)
-          .cookie("accessToken",accessToken,{
-            sameSite : "none",
-            domain : "localhost",
-            path: "/",
-            secure : true,
-            httpOnly : true,
-            maxAge : 1000*60*60*2
-          })
-          .send({
-            message : "Successfully Signed up!"
-          })
+            .cookie("accessToken", accessToken, {
+              sameSite: "none",
+              domain: "localhost",
+              path: "/",
+              secure: true,
+              httpOnly: true,
+              maxAge: 1000 * 60 * 60 * 2
+            })
+            .send({
+              message: "Successfully Signed up!"
+            })
         }
       } catch (err) {
         console.log("err", err)
         res.status(500).send({ message: "Internal server Error!" })
       }
+
     }
   }
 }
